@@ -1,10 +1,11 @@
 [build]
-  command = "cd crm && npm run build"
+  command = "cd crm && npm install && npm run build"
   publish = "crm/build"
 
 [build.environment]
   REACT_APP_API_BASE_URL = "https://your-backend-url.com"
   REACT_APP_DEMO_MODE = "true"
+  NODE_VERSION = "18"
 
 [[redirects]]
   from = "/api/*"
