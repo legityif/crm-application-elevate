@@ -1,4 +1,12 @@
-# COMP30022 IT Project
+# CRM Application 
+## Includes below features
+- login page
+- dashboard 
+- calendar
+- notes 
+- add connections
+- message connections
+- update user profile
 
 # Running server: 
 - cd server
