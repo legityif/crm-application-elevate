@@ -7,6 +7,9 @@ import ChatContainer from "../components/ChatContainer";
 import {io} from "socket.io-client";
 import {host} from "../utils/APIRoutes"
 
+// Demo mode flag
+const DEMO_MODE = process.env.REACT_APP_DEMO_MODE === 'true';
+
 const Container = styled.div`
   height: 100vh;
   width: 100vw;
@@ -49,8 +52,27 @@ function Message(){
   useEffect(() => {
     async function fetchData() {
       try {
+        if (DEMO_MODE) {
+          // Mock user data
+          const loggedInUser = {
+            _id: "demo_user_id",
+            username: storedUsername,
+            email: "demo@example.com"
+          };
+          setCurrentUser(loggedInUser);
+          
+          // Mock contacts data
+          const contactsData = [
+            { _id: "contact1", username: "Alice", email: "alice@example.com" },
+            { _id: "contact2", username: "Bob", email: "bob@example.com" },
+            { _id: "contact3", username: "Charlie", email: "charlie@example.com" }
+          ];
+          setContacts(contactsData);
+          return;
+        }
+
         // Fetch user data using fetch
-        const response = await fetch(`/users/getUser`, {
+        const response = await fetch(`${host}/users/getUser`, {
           method: 'POST',
           headers:{
             'Content-Type': 'application/json',
@@ -66,7 +88,7 @@ function Message(){
         const loggedInUser = await response.json();
         setCurrentUser(loggedInUser)
         // Fetch contacts data using fetch
-        const contactsResponse = await fetch(`/users/connections/${storedUsername}/getAllConnection`);
+        const contactsResponse = await fetch(`${host}/users/connections/${storedUsername}/getAllConnection`);
         
         if (!contactsResponse.ok) {
           throw new Error('Network response was not ok');
@@ -91,7 +113,7 @@ function Message(){
    */
   useEffect(() => {
     async function setSockets(){
-      if(currentUser){
+      if(currentUser && !DEMO_MODE){
         socket.current=io(host);
         socket.current.emit("add-user", currentUser._id);
       }

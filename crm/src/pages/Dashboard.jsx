@@ -10,6 +10,9 @@ import SearchBar from '../components/SearchBar';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
+// Demo mode flag
+const DEMO_MODE = process.env.REACT_APP_DEMO_MODE === 'true';
+
 const changeColors = keyframes`
   0%, 100% {
     filter: hue-rotate(0deg); /* Start and end with pink (320 degrees) */
@@ -347,6 +350,11 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
+    if (DEMO_MODE) {
+      setEventCount(5); // Mock event count
+      return;
+    }
+    
     // Make an API request to fetch the event count
     fetch(`/users/${userName}/event-count`)
       .then((response) => {
@@ -366,6 +374,51 @@ function Dashboard() {
 
   
   useEffect(() => {
+    if (DEMO_MODE) {
+      // Mock user events
+      const mockEvents = [
+        {
+          _id: '1',
+          title: 'Team Meeting',
+          start: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+          end: new Date(Date.now() + 86400000 + 3600000).toISOString(),
+          description: 'Weekly team sync'
+        },
+        {
+          _id: '2',
+          title: 'Project Review',
+          start: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
+          end: new Date(Date.now() + 172800000 + 7200000).toISOString(),
+          description: 'Review project progress'
+        }
+      ];
+      
+      setUserEvents(mockEvents);
+      
+      // Group mock events
+      const eventsByDate = {};
+      mockEvents.forEach((event) => {
+        const eventStartDate = event.start.split('T')[0];
+        const eventStartDateObj = new Date(event.start);
+  
+        if (eventStartDateObj > currentDate) {
+          if (!eventsByDate[eventStartDate]) {
+            eventsByDate[eventStartDate] = [];
+          }
+          eventsByDate[eventStartDate].push(event);
+        }
+      });
+  
+      const sortedEventLists = Object.values(eventsByDate).sort((a, b) => {
+        const dateA = new Date(a[0].start);
+        const dateB = new Date(b[0].start);
+        return dateA - dateB;
+      });
+  
+      setGroupedUserEvents(sortedEventLists);
+      return;
+    }
+    
     // Make an API request to fetch the user events
     fetch(`/users/${userName}/userEvents`)
       .then((response) => {
@@ -410,6 +463,11 @@ function Dashboard() {
   }, [userName]);
 
   const fetchUserConnectionCount = async () => {
+    if (DEMO_MODE) {
+      setConnectionCount(3); // Mock connection count
+      return;
+    }
+    
     await fetch(`/users/${userName}/connection-count`)
       .then((response) => {
         if (!response.ok) {
@@ -433,6 +491,15 @@ function Dashboard() {
 
 
   const fetchUserNotes = async () => {
+    if (DEMO_MODE) {
+      // Mock notes data
+      setNotes([
+        { _id: '1', title: 'Welcome to CRM Demo', content: 'This is a demo note. Try editing or deleting it!' },
+        { _id: '2', title: 'Sample Task', content: 'Complete the project setup.' }
+      ]);
+      return;
+    }
+    
     try {
       const response = await fetch(`/users/${userName}/getNotes`);
       if (!response.ok) {
@@ -446,6 +513,15 @@ function Dashboard() {
   };
 
   const fetchPendingConnections = async () => {
+    if (DEMO_MODE) {
+      // Mock pending connections
+      setIncomingConnections([
+        { _id: '1', username: 'John Doe', email: 'john@example.com' },
+        { _id: '2', username: 'Jane Smith', email: 'jane@example.com' }
+      ]);
+      return;
+    }
+    
     try{
       const response = await fetch(`/users/connections/${userName}/getAllPendingConnections`);
       if (!response.ok) {
@@ -470,59 +546,75 @@ function Dashboard() {
   
   const handleAddNote = async () => {
     if (newTitle && newNote) {
-      if (showNotesPopup !== null) {
-        // const updatedNotes = [...notes];
+      if (DEMO_MODE) {
+        // Mock note operations for demo
         if (showNotesPopup >= 0 && showNotesPopup < notes.length) {
-          // Editing an existing note
-          const payload = {
-            id: newNoteID,
-            title: newTitle, // The updated title
-            content: newNote, // The updated content
-          };
-          try {
-            const response = await fetch(`/users/${userName}/updateNote`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify( payload ),
-            });
-          
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          fetchUserNotes();
-          // const data = await response.json();
-          // updatedNotes.push({ title: newTitle, note: newNote });
-          } catch (error) {
-            console.error('Error creating note:', error);
-          }
+          // Editing existing note
+          const updatedNotes = [...notes];
+          updatedNotes[showNotesPopup] = { ...updatedNotes[showNotesPopup], title: newTitle, content: newNote };
+          setNotes(updatedNotes);
+          toast.success('Note updated successfully!');
         } else {
-          // Adding a new note
-          try {
-            const response = await fetch(`/users/${userName}/notes`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ title: newTitle, content: newNote }),
-            });
-          
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          fetchUserNotes();
-          // const data = await response.json();
-          // updatedNotes.push({ title: newTitle, note: newNote });
-          } catch (error) {
-            console.error('Error creating note:', error);
-          }
+          // Adding new note
+          const newNoteObj = { _id: Date.now().toString(), title: newTitle, content: newNote };
+          setNotes([...notes, newNoteObj]);
+          toast.success('Note added successfully!');
         }
-        // setNotes(updatedNotes);
         clearNoteInput();
-
         setShowNotesPopup(null);
+        return;
       }
+      
+      if (showNotesPopup >= 0 && showNotesPopup < notes.length) {
+        // Editing an existing note
+        const payload = {
+          id: newNoteID,
+          title: newTitle, // The updated title
+          content: newNote, // The updated content
+        };
+        try {
+          const response = await fetch(`/users/${userName}/updateNote`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify( payload ),
+          });
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        fetchUserNotes();
+        // const data = await response.json();
+        // updatedNotes.push({ title: newTitle, note: newNote });
+        } catch (error) {
+          console.error('Error creating note:', error);
+        }
+      } else {
+        // Adding a new note
+        try {
+          const response = await fetch(`/users/${userName}/notes`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ title: newTitle, content: newNote }),
+          });
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        fetchUserNotes();
+        // const data = await response.json();
+        // updatedNotes.push({ title: newTitle, note: newNote });
+        } catch (error) {
+          console.error('Error creating note:', error);
+        }
+      }
+      // setNotes(updatedNotes);
+      clearNoteInput();
+
+      setShowNotesPopup(null);
     } else {
       showError("Please include a title and a note.");
     }
@@ -540,6 +632,14 @@ function Dashboard() {
   const deleteNote = async (index, id) => {
     if (index >= 0 && index < notes.length) {
       if (window.confirm("Are you sure you want to delete this note?")) {
+        if (DEMO_MODE) {
+          // Mock delete for demo
+          const updatedNotes = notes.filter((_, i) => i !== index);
+          setNotes(updatedNotes);
+          toast.success('Note deleted successfully!');
+          return;
+        }
+        
         try{
           const payload = {
             id: id,
@@ -584,9 +684,15 @@ function Dashboard() {
   };
 
   const deletePendingConnection = async (userToDelete) => {
+    if (DEMO_MODE) {
+      // Mock delete pending connection
+      const updatedConnections = incomingConnections.filter(conn => conn.username !== userToDelete);
+      setIncomingConnections(updatedConnections);
+      toast.success('Connection request declined!');
+      return;
+    }
+    
     try{
-      
-
       const payload = {
         username: userName,
         connectionToDelete: userToDelete,
@@ -609,6 +715,14 @@ function Dashboard() {
   }
 
   const acceptInvite = async (connection) => {
+    if (DEMO_MODE) {
+      // Mock accept invite
+      toast.success(`Added ${connection.username}.`);
+      setConnectionCount(prev => prev + 1);
+      deletePendingConnection(connection.username);
+      return;
+    }
+    
     try {
       const response = await fetch('/users/connections', {
       method: 'PATCH', 

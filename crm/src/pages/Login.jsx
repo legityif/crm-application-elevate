@@ -10,6 +10,10 @@ import avatars from "../assets/Avatar.png";
 import { primaryColor, secondaryColor }from '../utils/Color';
 import { toast, ToastContainer } from 'react-toastify';
 import { useLinkedIn } from 'react-linkedin-login-oauth2';
+import { host } from '../utils/APIRoutes';
+
+// Demo mode flag - set to true for static deployment
+const DEMO_MODE = process.env.REACT_APP_DEMO_MODE === 'true';
 
 const LoginContainer = styled.div`
   display: flex; 
@@ -242,6 +246,12 @@ function Login() {
   };
 
   const handleCredentialResponse = async (response) => {
+    if (DEMO_MODE) {
+      // Mock Google login success
+      navigate(`/dashboard?username=demo`);
+      return;
+    }
+    
     const credential = response.credential;
     // Decode the JWT to get user info
     const payload = JSON.parse(atob(credential.split('.')[1]));
@@ -263,8 +273,14 @@ function Login() {
    * @returns {boolean} True if a matching username or email is found, false otherwise.
    */
     const userExists = async (username,email) => {
+      if (DEMO_MODE) {
+        // Mock demo users
+        const demoUsers = ['Skyrider', 'demo', 'test'];
+        return demoUsers.includes(username);
+      }
+      
       try{
-        const response = await fetch('/users');
+        const response = await fetch(`${host}/users`);
         
         if (!response.ok) {
           throw new Error("failed to fetch users");
@@ -285,8 +301,14 @@ function Login() {
     };
 
   const postUser = async (username, password, email) => {
+    if (DEMO_MODE) {
+      // Mock successful user creation
+      toast.success("Demo user created successfully.");
+      return;
+    }
+    
     try {
-      const response = await fetch('/users', {
+      const response = await fetch(`${host}/users`, {
         method: 'POST', 
         headers: {
           'Content-Type': 'application/json',

@@ -1,0 +1,17 @@
+[build]
+  command = "cd crm && npm run build"
+  publish = "crm/build"
+
+[build.environment]
+  REACT_APP_API_BASE_URL = "https://your-backend-url.com"
+  REACT_APP_DEMO_MODE = "true"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-backend-url.com/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/users/*"
+  to = "https://your-backend-url.com/users/:splat"
+  status = 200
